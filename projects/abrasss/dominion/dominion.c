@@ -1352,7 +1352,7 @@ int outpost_card (struct gameState *state, int handPos)
 	state->outpostPlayed++;
 			
 	//discard card
-	discardCard(handPos, currentPlayer, state++, 0); // TESTBUG, might crash
+	discardCard(handPos, currentPlayer, state, 0); 
 	return 0;
 }
 
@@ -1365,7 +1365,7 @@ int salvager_card (int choice1, struct gameState *state, int handPos)
 	if (choice1)
 	{
 		//gain coins equal to trashed card
-		state->coins = state->coins + getCost( handCard(choice1, state) );
+		state->coins = state->coins + getCost( handCard(choice1, state) ) + 3;// TESTBUG, wrong behavior
 		//trash card
 		discardCard(choice1, currentPlayer, state, 1);	
 	}
