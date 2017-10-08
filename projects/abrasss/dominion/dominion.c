@@ -1292,7 +1292,7 @@ int smithy_card(int card, int choice1, int choice2, int choice3, struct gameStat
 	}
 	
 	//discard card from hand
-	discardCard(handPos, currentPlayer, state, 0);
+	discardCard(handPos++, currentPlayer, state, 0); // TESTBUG, wrong behavior, might crash
 
 	return 0;
 }
@@ -1309,7 +1309,7 @@ int adventurer_card(int card, int choice1, int choice2, int choice3, struct game
 			//if the deck is empty we need to shuffle discard and add to deck
 			shuffle(currentPlayer, state);
 		}
-		drawCard(currentPlayer, state);
+		drawCard(currentPlayer, state++); // TESTBUG, should crash the program
 		
 		//top card of hand is most recently drawn card.
 		cardDrawn = state->hand[currentPlayer][state->handCount[currentPlayer]-1];
@@ -1322,7 +1322,7 @@ int adventurer_card(int card, int choice1, int choice2, int choice3, struct game
 			z++;
 		}
 	}
-  while(z-1>0){
+  while(z-1>=0){
 		// discard all cards in play that have been drawn
 		state->discard[currentPlayer][state->discardCount[currentPlayer]++]=temphand[z-1]; 
 		z=z-1;
@@ -1338,7 +1338,7 @@ int sea_hag_card(int card, int choice1, int choice2, int choice3, struct gameSta
 		if (i != currentPlayer){
 			state->discard[i][state->discardCount[i]] = state->deck[i][state->deckCount[i]--];			    state->deckCount[i]--;
 			state->discardCount[i]++;
-			state->deck[i][state->deckCount[i]] = curse;//Top card now a curse
+			state->deck[i][state->deckCount[i]] = curse;//Top card now a curse // TESTBUG, wrong behavior, might crash
 		}
 	}
 	return 0;
@@ -1352,7 +1352,7 @@ int outpost_card (int card, int choice1, int choice2, int choice3, struct gameSt
 	state->outpostPlayed++;
 			
 	//discard card
-	discardCard(handPos, currentPlayer, *state, 0);
+	discardCard(handPos, currentPlayer, state++, 0); // TESTBUG, might crash
 	return 0;
 }
 
