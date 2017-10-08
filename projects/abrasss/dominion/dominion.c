@@ -667,7 +667,7 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
   switch( card ) 
     {
     case adventurer:
-		  return adventurer_card(card, choice1, choice2, choice3, state, handPos, bonus);
+		  return adventurer_card(state, handPos);
 			
     case council_room:
       //+4 Cards
@@ -811,7 +811,7 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
       return 0;
 		
     case smithy:
-		  return smithy_card(card, choice1, choice2, choice3, state, handPos, bonus);
+		  return smithy_card(state, handPos);
 		
     case village:
       //+1 Card
@@ -1130,13 +1130,13 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
       return 0;
 		
     case outpost:
-		  return outpost_card(card, choice1, choice2, choice3, state, handPos, bonus);
+		  return outpost_card(state, handPos);
 		
     case salvager:
-		  return salvager_card(card, choice1, choice2, choice3, state, handPos, bonus);
+		  return salvager_card(choice1, state, handPos);
 		
     case sea_hag:
-		  return sea_hag_card(card, choice1, choice2, choice3, state, handPos, bonus);
+		  return sea_hag_card(state);
 		
     case treasure_map:
       //search hand for another treasure_map
@@ -1280,7 +1280,7 @@ int updateCoins(int player, struct gameState *state, int bonus)
 
 //end of dominion.c
 //refactored cards for CS362
-int smithy_card(int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+int smithy_card(struct gameState *state, int handPos)
 {
 	int i;
   int currentPlayer = whoseTurn(state);
@@ -1296,7 +1296,7 @@ int smithy_card(int card, int choice1, int choice2, int choice3, struct gameStat
 
 	return 0;
 }
-int adventurer_card(int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+int adventurer_card(struct gameState *state, int handPos)
 {
   int currentPlayer = whoseTurn(state);
   int temphand[MAX_HAND];
@@ -1329,7 +1329,7 @@ int adventurer_card(int card, int choice1, int choice2, int choice3, struct game
 	}
 	return 0;
 }
-int sea_hag_card(int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+int sea_hag_card(struct gameState *state)
 {
 	int i;
   int currentPlayer = whoseTurn(state);
@@ -1344,7 +1344,7 @@ int sea_hag_card(int card, int choice1, int choice2, int choice3, struct gameSta
 	return 0;
 }
 
-int outpost_card (int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+int outpost_card (struct gameState *state, int handPos)
 {
 	int currentPlayer = whoseTurn(state);
 
@@ -1356,7 +1356,7 @@ int outpost_card (int card, int choice1, int choice2, int choice3, struct gameSt
 	return 0;
 }
 
-int salvager_card (int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+int salvager_card (int choice1, struct gameState *state, int handPos)
 {
 	//+1 buy
 	int currentPlayer = whoseTurn(state);
