@@ -655,9 +655,9 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
 
   int tributeRevealedCards[2] = {-1, -1};
   int temphand[MAX_HAND];// moved above the if statement
-  int drawntreasure=0;
-  int cardDrawn;
-  int z = 0;// this is the counter for the temp hand
+  //int drawntreasure=0;
+  //int cardDrawn;
+  //int z = 0;// this is the counter for the temp hand
   if (nextPlayer > (state->numPlayers - 1)){
     nextPlayer = 0;
   }
@@ -667,25 +667,7 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
   switch( card ) 
     {
     case adventurer:
-      while(drawntreasure<2){
-	if (state->deckCount[currentPlayer] <1){//if the deck is empty we need to shuffle discard and add to deck
-	  shuffle(currentPlayer, state);
-	}
-	drawCard(currentPlayer, state);
-	cardDrawn = state->hand[currentPlayer][state->handCount[currentPlayer]-1];//top card of hand is most recently drawn card.
-	if (cardDrawn == copper || cardDrawn == silver || cardDrawn == gold)
-	  drawntreasure++;
-	else{
-	  temphand[z]=cardDrawn;
-	  state->handCount[currentPlayer]--; //this should just remove the top card (the most recently drawn one).
-	  z++;
-	}
-      }
-      while(z-1>=0){
-	state->discard[currentPlayer][state->discardCount[currentPlayer]++]=temphand[z-1]; // discard all cards in play that have been drawn
-	z=z-1;
-      }
-      return 0;
+		  return adventurer_card(card, choice1, choice2, choice3, state, handPos, bonus);
 			
     case council_room:
       //+4 Cards
@@ -829,15 +811,7 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
       return 0;
 		
     case smithy:
-      //+3 Cards
-      for (i = 0; i < 3; i++)
-	{
-	  drawCard(currentPlayer, state);
-	}
-			
-      //discard card from hand
-      discardCard(handPos, currentPlayer, state, 0);
-      return 0;
+		  return smithy_card(card, choice1, choice2, choice3, state, handPos, bonus);
 		
     case village:
       //+1 Card
@@ -1156,38 +1130,13 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
       return 0;
 		
     case outpost:
-      //set outpost flag
-      state->outpostPlayed++;
-			
-      //discard card
-      discardCard(handPos, currentPlayer, state, 0);
-      return 0;
+		  return outpost_card(card, choice1, choice2, choice3, state, handPos, bonus);
 		
     case salvager:
-      //+1 buy
-      state->numBuys++;
-			
-      if (choice1)
-	{
-	  //gain coins equal to trashed card
-	  state->coins = state->coins + getCost( handCard(choice1, state) );
-	  //trash card
-	  discardCard(choice1, currentPlayer, state, 1);	
-	}
-			
-      //discard card
-      discardCard(handPos, currentPlayer, state, 0);
-      return 0;
+		  return salvager_card(card, choice1, choice2, choice3, state, handPos, bonus);
 		
     case sea_hag:
-      for (i = 0; i < state->numPlayers; i++){
-	if (i != currentPlayer){
-	  state->discard[i][state->discardCount[i]] = state->deck[i][state->deckCount[i]--];			    state->deckCount[i]--;
-	  state->discardCount[i]++;
-	  state->deck[i][state->deckCount[i]--] = curse;//Top card now a curse
-	}
-      }
-      return 0;
+		  return sea_hag_card(card, choice1, choice2, choice3, state, handPos, bonus);
 		
     case treasure_map:
       //search hand for another treasure_map
@@ -1330,4 +1279,98 @@ int updateCoins(int player, struct gameState *state, int bonus)
 
 
 //end of dominion.c
+//refactored cards for CS362
+int smithy_card(int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+{
+	int i;
+  int currentPlayer = whoseTurn(state);
 
+	//+3 Cards
+	for (i = 0; i < 3; i++)
+	{
+		drawCard(currentPlayer, state);
+	}
+	
+	//discard card from hand
+	discardCard(handPos, currentPlayer, state, 0);
+
+	return 0;
+}
+int adventurer_card(int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+{
+  int currentPlayer = whoseTurn(state);
+  int temphand[MAX_HAND];
+  int drawntreasure=0;
+  int cardDrawn;
+  int z = 0;// this is the counter for the temp hand
+
+	while(drawntreasure<2){
+		if (state->deckCount[currentPlayer] <1){
+			//if the deck is empty we need to shuffle discard and add to deck
+			shuffle(currentPlayer, state);
+		}
+		drawCard(currentPlayer, state);
+		
+		//top card of hand is most recently drawn card.
+		cardDrawn = state->hand[currentPlayer][state->handCount[currentPlayer]-1];
+		if (cardDrawn == copper || cardDrawn == silver || cardDrawn == gold)
+			drawntreasure++;
+		else{
+			//this should just remove the top card (the most recently drawn one).
+			temphand[z]=cardDrawn;
+			state->handCount[currentPlayer]--; 
+			z++;
+		}
+	}
+  while(z-1>0){
+		// discard all cards in play that have been drawn
+		state->discard[currentPlayer][state->discardCount[currentPlayer]++]=temphand[z-1]; 
+		z=z-1;
+	}
+	return 0;
+}
+int sea_hag_card(int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+{
+	int i;
+  int currentPlayer = whoseTurn(state);
+
+	for (i = 0; i < state->numPlayers; i++){
+		if (i != currentPlayer){
+			state->discard[i][state->discardCount[i]] = state->deck[i][state->deckCount[i]--];			    state->deckCount[i]--;
+			state->discardCount[i]++;
+			state->deck[i][state->deckCount[i]] = curse;//Top card now a curse
+		}
+	}
+	return 0;
+}
+
+int outpost_card (int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+{
+	int currentPlayer = whoseTurn(state);
+
+	//set outpost flag
+	state->outpostPlayed++;
+			
+	//discard card
+	discardCard(handPos, currentPlayer, *state, 0);
+	return 0;
+}
+
+int salvager_card (int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
+{
+	//+1 buy
+	int currentPlayer = whoseTurn(state);
+	state->numBuys++;
+			
+	if (choice1)
+	{
+		//gain coins equal to trashed card
+		state->coins = state->coins + getCost( handCard(choice1, state) );
+		//trash card
+		discardCard(choice1, currentPlayer, state, 1);	
+	}
+			
+	//discard card
+	discardCard(handPos, currentPlayer, state, 0);
+	return 0;
+}
