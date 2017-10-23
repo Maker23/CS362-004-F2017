@@ -233,6 +233,7 @@ int playCard(int handPos, int choice1, int choice2, int choice3, struct gameStat
   int card;
   int coin_bonus = 0; 		//tracks coins gain from actions
 
+	if (DEBUG) printf ("entering playCard\n");
   //check if it is the right phase
   if (state->phase != 0)
     {
@@ -247,6 +248,8 @@ int playCard(int handPos, int choice1, int choice2, int choice3, struct gameStat
 	
   //get card played
   card = handCard(handPos, state);
+
+	if (DEBUG) printf("++ found card %d\n", card);
 	
   //check if selected card is an action
   if ( card < adventurer || card > treasure_map )
@@ -266,6 +269,7 @@ int playCard(int handPos, int choice1, int choice2, int choice3, struct gameStat
   //update coins (Treasure cards may be added with card draws)
   updateCoins(state->whoseTurn, state, coin_bonus);
 	
+	if (DEBUG) printf ("exiting playCard normally\n");
   return 0;
 }
 
@@ -417,6 +421,7 @@ int isGameOver(struct gameState *state) {
 int scoreFor (int player, struct gameState *state) {
 
   int i;
+	int tmp;
   int score = 0;
   //score from hand
   for (i = 0; i < state->handCount[player]; i++)
@@ -428,6 +433,9 @@ int scoreFor (int player, struct gameState *state) {
       if (state->hand[player][i] == great_hall) { score = score + 1; };
       if (state->hand[player][i] == gardens) { score = score + ( fullDeckCount(player, 0, state) / 10 ); };
     }
+  
+	if (DEBUG) printf("hand score = %d\n", score);
+	tmp=score;
 
   //score from discard
   for (i = 0; i < state->discardCount[player]; i++)
@@ -439,6 +447,8 @@ int scoreFor (int player, struct gameState *state) {
       if (state->discard[player][i] == great_hall) { score = score + 1; };
       if (state->discard[player][i] == gardens) { score = score + ( fullDeckCount(player, 0, state) / 10 ); };
     }
+	if (DEBUG) printf("discard score = %d\n", score - tmp);
+	tmp=score;
 
   //score from deck
   for (i = 0; i < state->discardCount[player]; i++)
@@ -450,6 +460,7 @@ int scoreFor (int player, struct gameState *state) {
       if (state->deck[player][i] == great_hall) { score = score + 1; };
       if (state->deck[player][i] == gardens) { score = score + ( fullDeckCount(player, 0, state) / 10 ); };
     }
+	if (DEBUG) printf("deck score = %d\n", score - tmp);
 
   return score;
 }
@@ -1133,7 +1144,7 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
 		  return outpost_card(state, handPos);
 		
     case salvager:
-		  return salvager_card(choice1, state, handPos);
+		  return salvager_card(choice1, bonus, state, handPos);
 		
     case sea_hag:
 		  return sea_hag_card(state);
@@ -1179,9 +1190,13 @@ int discardCard(int handPos, int currentPlayer, struct gameState *state, int tra
   if (trashFlag < 1)
     {
       //add card to played pile
+			if (DEBUG)printf ("Adding card %d to playedCards stack\n", state->hand[currentPlayer][handPos]);
       state->playedCards[state->playedCardCount] = state->hand[currentPlayer][handPos]; 
       state->playedCardCount++;
     }
+		else if (DEBUG) {
+			printf ("Trashing card %d", state->hand[currentPlayer][handPos]);
+		}
 	
   //set played card to -1
   state->hand[currentPlayer][handPos] = -1;
@@ -1285,14 +1300,16 @@ int smithy_card(struct gameState *state, int handPos)
 	int i;
   int currentPlayer = whoseTurn(state);
 
+	if (DEBUG) printf ("In smithy_card, player=%d\n", currentPlayer);
+
 	//+3 Cards
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 4; i++)  // TESTBUG, should be three not four
 	{
 		drawCard(currentPlayer, state);
 	}
 	
-	//discard card from hand
-	discardCard(handPos++, currentPlayer, state, 0); // TESTBUG, wrong behavior, might crash
+	//discard Smithy card from hand
+	discardCard(handPos, currentPlayer, state, 0);
 
 	return 0;
 }
@@ -1304,12 +1321,12 @@ int adventurer_card(struct gameState *state, int handPos)
   int cardDrawn;
   int z = 0;// this is the counter for the temp hand
 
-	while(drawntreasure<2){
+	while(drawntreasure<3){ // TESTBUG, should be 2
 		if (state->deckCount[currentPlayer] <1){
 			//if the deck is empty we need to shuffle discard and add to deck
 			shuffle(currentPlayer, state);
 		}
-		drawCard(currentPlayer, state++); // TESTBUG, should crash the program
+		drawCard(currentPlayer, state); 
 		
 		//top card of hand is most recently drawn card.
 		cardDrawn = state->hand[currentPlayer][state->handCount[currentPlayer]-1];
@@ -1336,9 +1353,11 @@ int sea_hag_card(struct gameState *state)
 
 	for (i = 0; i < state->numPlayers; i++){
 		if (i != currentPlayer){
-			state->discard[i][state->discardCount[i]] = state->deck[i][state->deckCount[i]--];			    state->deckCount[i]--;
+			state->discard[i][state->discardCount[i]] = state->deck[i][state->deckCount[i]--];			    
+			state->deckCount[i]--;
 			state->discardCount[i]++;
-			state->deck[i][state->deckCount[i]] = curse;//Top card now a curse // TESTBUG, wrong behavior, might crash
+			state->deck[i][state->deckCount[i]--] = curse;//Top card now a curse 
+			// TESTBUG removed from this code for now because it already has bugs  :)
 		}
 	}
 	return 0;
@@ -1356,18 +1375,23 @@ int outpost_card (struct gameState *state, int handPos)
 	return 0;
 }
 
-int salvager_card (int choice1, struct gameState *state, int handPos)
+int salvager_card (int choice1, int * bonus, struct gameState *state, int handPos)
 {
 	//+1 buy
 	int currentPlayer = whoseTurn(state);
 	state->numBuys++;
-			
+
 	if (choice1)
 	{
+		if (DEBUG) printf ("++ Found value with handCard = %d\n",  getCost( handCard(choice1, state)));
 		//gain coins equal to trashed card
-		state->coins = state->coins + getCost( handCard(choice1, state) ) + 3;// TESTBUG, wrong behavior
+		state->coins = state->coins + getCost( handCard(choice1, state) ) ;// EXISTING BUG, wrong behavior
+		
+		//*bonus = getCost( handCard(choice1, state) ) ; // Correct behavior
+		//if (DEBUG) printf ("++ bonus= %d\n",  *bonus);
+
 		//trash card
-		discardCard(choice1, currentPlayer, state, 1);	
+		discardCard(choice1, currentPlayer, state, 1);
 	}
 			
 	//discard card
